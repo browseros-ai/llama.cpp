@@ -540,6 +540,45 @@ struct llama_model_qwen3 : public llama_model_base {
     std::unique_ptr<llm_graph_context> build_arch_graph(const llm_graph_params & params) const override;
 };
 
+struct llama_model_molmo2_rrt_qwen3 : public llama_model_base {
+    llama_model_molmo2_rrt_qwen3(const struct llama_model_params & params) : llama_model_base(params) {}
+
+    struct lora_pair {
+        ggml_tensor * a = nullptr;
+        ggml_tensor * b = nullptr;
+    };
+
+    struct core_adapters {
+        lora_pair attn_qkv;
+        lora_pair attn_out;
+        lora_pair ffn_gate_up;
+        lora_pair ffn_down;
+        ggml_tensor * attn_norm = nullptr;
+        ggml_tensor * ffn_norm  = nullptr;
+    };
+
+    uint32_t n_unique_layers = 0;
+    uint32_t n_effective_layers = 0;
+    uint32_t n_loops = 0;
+    uint32_t n_prelude = 0;
+    uint32_t n_core = 0;
+    uint32_t n_coda = 0;
+    uint32_t n_adapter_rank = 0;
+
+    std::vector<std::vector<core_adapters>> rrt_core;
+    std::vector<ggml_tensor *> deep_residuals;
+    ggml_tensor * index_embd = nullptr;
+
+    void load_arch_hparams(llama_model_loader & ml) override;
+    void load_arch_tensors(llama_model_loader & ml) override;
+
+    struct graph : public llm_graph_context {
+        graph(const llama_model & model, const llm_graph_params & params);
+    };
+
+    std::unique_ptr<llm_graph_context> build_arch_graph(const llm_graph_params & params) const override;
+};
+
 
 struct llama_model_qwen3moe : public llama_model_base {
     llama_model_qwen3moe(const struct llama_model_params & params) : llama_model_base(params) {}
